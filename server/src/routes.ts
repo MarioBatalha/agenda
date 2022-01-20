@@ -1,9 +1,11 @@
 import express from 'express';
 
+import RoomsController from './controllers/RoomsController';
+
 const routes = express.Router();
 
-routes.get('/', (request, response) => {
-    return response.json('it is  works');
-})
+const roomsController = new RoomsController();
+
+routes.get('/rooms', roomsController.index);
 
 export default routes;
