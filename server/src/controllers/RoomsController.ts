@@ -19,18 +19,29 @@ class RoomsController {
       const trx = await knex.transaction();
 
       const roomsExists = await trx("rooms").where("name", name).first();
-      if(roomsExists) {
-          await trx.rollback();
-          return response.status(400).json({ errors: 'Room is already created'})
-      };
+      if (roomsExists) {
+        await trx.rollback();
+        return response.status(400).json({ errors: "Room is already created" });
+      }
 
-      const room = await trx('rooms').insert(request.body);
+      const room = await trx("rooms").insert(request.body);
 
       await trx.commit();
       return response.json(`Room with id ${room} created with success!`);
-      
     } catch (error) {
-        response.json({ error: "Error creating a new rooms"})
+      response.json({ error: "Error creating a new rooms" });
+    }
+  }
+
+  async remove(request: Request, response: Response) {
+    try {
+      const { id_room } = request.body;
+
+      await knex("rooms").where("id_room", id_room).del();
+
+      return response.json("Room deleted with success");
+    } catch (error) {
+      response.json({ error: "You can't delete this room" });
     }
   }
 }
