@@ -44,6 +44,16 @@ class RoomsController {
       response.json({ error: "You can't delete this room" });
     }
   }
+
+  async update(request: Request, response: Response) {
+    try {
+      const { id_rooms } = request.params;
+
+      const { name, building } = request.body;
+    } catch (error) {
+      response.json({ error: 'You cannot update this rooms'})
+    }
+  }
 }
 
 export default RoomsController;
