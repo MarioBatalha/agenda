@@ -71,6 +71,14 @@ class RoomsController {
         await trx.rollback();
         return response.status(400).json({ error: "Rooms already exists"});
       }
+
+      const room = await trx("rooms").where("id_room", id_room).update({
+        name, 
+        building
+      });
+
+      await trx.commit();
+      response.json(`Room with id ${room} was updated with success`)
        
     } catch (error) {
       response.json({ error: "You cannot update this rooms" });
