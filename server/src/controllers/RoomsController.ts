@@ -37,8 +37,10 @@ class RoomsController {
     try {
       const { id_room } = request.body;
 
-      await knex("rooms").where("id_room", id_room).del();
-
+      const room = await knex("rooms").where("id_room", id_room).del();
+      if (room === 0) {
+        return response.json("Room already deleted");
+      }
       return response.json("Room deleted with success");
     } catch (error) {
       response.json({ error: "You can't delete this room" });
@@ -51,7 +53,7 @@ class RoomsController {
 
       const { name, building } = request.body;
     } catch (error) {
-      response.json({ error: 'You cannot update this rooms'})
+      response.json({ error: "You cannot update this rooms" });
     }
   }
 }
