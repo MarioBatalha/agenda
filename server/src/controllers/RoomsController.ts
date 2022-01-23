@@ -49,9 +49,29 @@ class RoomsController {
 
   async update(request: Request, response: Response) {
     try {
-      const { id_rooms } = request.params;
+      const { id_room } = request.params;
 
       const { name, building } = request.body;
+
+      const trx = await knex.transaction();
+      const idExists = await trx('rooms').where('id_room', id_room).first();
+
+      if(!idExists) {
+        await trx.rollback();
+        return response.status(400).json({ error: "Room not exists"})
+      }
+
+      const roomExists = await trx("rooms")
+      .where("name", name)
+      .whereNot("id_room", id_room)
+      .first()
+      .select("*")
+
+      if(roomExists) {
+        await trx.rollback();
+        return response.status(400).json({ error: "Rooms already exists"});
+      }
+       
     } catch (error) {
       response.json({ error: "You cannot update this rooms" });
     }
