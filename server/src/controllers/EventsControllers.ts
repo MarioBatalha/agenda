@@ -17,7 +17,20 @@ class EventsController {
           return response.json('This date is before the actual date and hour');
         }
 
-        
+        for(var i = 0; i < rooms.length; i++) {
+          const findEventsInSameDate = await trx('rooms_events')
+          .join('events', 'events.id_event', '=', 'rooms_events.id_event')
+          .join('rooms', 'rooms.id_room', '=', 'rooms_events.id_room')
+          .where('date_time', eventDateTime)
+          .where('rooms_events.id_room', rooms[i])
+          .select('*')
+          .first();
+
+          if(findEventsInSameDate) {
+            await trx.rollback();
+            return response.json('There is an events already booked in the same same local and date')
+          }
+        }
 
         const event = {
         name,
