@@ -12,6 +12,13 @@ class EventsController {
         const parseDateTime = parseISO(date_time);
         const eventDateTime = startOfHour(parseDateTime);
 
+        if(isPast(parseDateTime)) {
+          await trx.rollback();
+          return response.json('This date is before the actual date and hour');
+        }
+
+        
+
         const event = {
         name,
         description,
