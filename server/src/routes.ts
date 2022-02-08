@@ -14,5 +14,6 @@ routes.put('/rooms/:id_room', roomsController.update);
 routes.delete('/rooms', roomsController.remove);
 
 routes.post('/events', eventsController.create);
+routes.get('/events', eventsController.index);
 
 export default routes;  
