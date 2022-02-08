@@ -3,6 +3,33 @@ import knex from "../database/connections";
 import { parseISO, startOfHour, format, isPast } from "date-fns";
 
 class EventsController {
+  async index(request: Request, response: Response) {
+    try {
+      const events = await knex('rooms_events')
+      .join('events', 'events.id_event', '=', 'rooms_events.id_event')
+      .join('rooms', 'rooms.id_room', '=', 'rooms_events.id_room')
+      .select('rooms.name AS room_name',
+       'rooms.building',
+       'events.*');
+
+      const serializedItems = events.map(event => {
+        return {
+          id_event: event.id_event,
+          building: event.building,
+          name_room: event.room_name,
+          name_event: event.name,
+          description: event.description,
+          date_time: format(event.date_time, "dd'/'MM'/'yyyy HH':'mn"),
+          responsible: event.responsible
+        }
+      })    
+      response.json(serializedItems)   
+
+    } catch (error) {
+      return response.json({ error: 'Something went wrong'});
+    }
+  }
+
   async create(request: Request, response: Response) {
     try {
         const { name, description, date_time, responsible, rooms } = request.body;
