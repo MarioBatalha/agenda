@@ -26,7 +26,7 @@ class EventsController {
       response.json(serializedItems)   
 
     } catch (error) {
-      return response.json({ error: 'Something went wrong'});
+      return response.json({ error: 'Something went wrong list event'});
     }
   }
 
@@ -83,6 +83,28 @@ class EventsController {
         return response.json({message: "Event inserted"})
     } catch (error) {
         return response.json({error: "Something went wrong creating event"})
+    }
+  }
+
+  async remove(request: Request, response: Response) {
+    try {
+      const {id_event} = request.params;
+
+      const trx = await knex.transaction();
+      const verify = await trx('events').where('id_event', id_event).del();
+
+      if(verify === 0) {
+        await trx.rollback();
+        return response.json({ message: 'event not exists'})
+      }
+
+      await trx('rooms_events').where('id_event', id_event).del();
+
+      await trx.commit();
+      return response.json({ message: 'event deleted with success!'});
+
+    } catch (error) {
+      return response.json({ error: 'Something went wrong to remove event'})
     }
   }
 }
