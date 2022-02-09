@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import knex from "../database/connections";
-import { parseISO, startOfHour, format, isPast } from "date-fns";
+import { 
+  parseISO,
+  startOfHour,
+  format,
+  isPast,
+  startOfDay,
+  endOfDay
+ } from "date-fns";
 
 class EventsController {
   async index(request: Request, response: Response) {
@@ -11,6 +18,36 @@ class EventsController {
       .select('rooms.name AS room_name',
        'rooms.building',
        'events.*');
+
+      const serializedItems = events.map(event => {
+        return {
+          id_event: event.id_event,
+          building: event.building,
+          name_room: event.room_name,
+          name_event: event.name,
+          description: event.description,
+          date_time: format(event.date_time, "dd'/'MM'/'yyyy HH':'mn"),
+          responsible: event.responsible
+        }
+      })    
+      response.json(serializedItems)   
+
+    } catch (error) {
+      return response.json({ error: 'Something went wrong list event'});
+    }
+  }
+
+  async eventOfDay(request: Request, response: Response) {
+    try {
+      const { day = Date.now() } = request.query;
+
+      const searchDate = parseISO(day.toLocaleString());
+
+      const events = await knex('rooms_events')
+      .join('events', 'events.id_event', '=', 'rooms_events.id_event')
+      .join('rooms', 'rooms.id_room', '=', 'rooms_events.id_room')
+      .select('rooms.name AS room_name', 'rooms.building', 'events.*')
+      .whereBetween('date_time', [startOfDay(searchDate), endOfDay(searchDate)]);
 
       const serializedItems = events.map(event => {
         return {
