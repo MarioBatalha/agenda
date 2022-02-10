@@ -19,7 +19,13 @@ routes.post('/rooms', celebrate({
 routes.put('/rooms/:id_room', roomsController.update);
 routes.delete('/rooms', roomsController.remove);
 
-routes.post('/events', eventsController.create);
+routes.post('/events', celebrate({
+    body: Joi.object().keys({
+        name: Joi.string().required().max(50),
+        description: Joi.string().required().max(2000),
+        responsible: Joi.string().required().max(50)
+    })
+}), eventsController.create);
 routes.get('/events', eventsController.index);
 routes.get('/events_of_day', eventsController.eventOfDay);
 routes.delete('/events/:id_room', eventsController.remove);
