@@ -1,25 +1,23 @@
 import { Request, Response } from "express";
 import knex from "../database/connections";
-import { 
+import {
   parseISO,
   startOfHour,
   format,
   isPast,
   startOfDay,
-  endOfDay
- } from "date-fns";
+  endOfDay,
+} from "date-fns";
 
 class EventsController {
   async index(request: Request, response: Response) {
     try {
-      const events = await knex('rooms_events')
-      .join('events', 'events.id_event', '=', 'rooms_events.id_event')
-      .join('rooms', 'rooms.id_room', '=', 'rooms_events.id_room')
-      .select('rooms.name AS room_name',
-       'rooms.building',
-       'events.*');
+      const events = await knex("rooms_events")
+        .join("events", "events.id_event", "=", "rooms_events.id_event")
+        .join("rooms", "rooms.id_room", "=", "rooms_events.id_room")
+        .select("rooms.name AS room_name", "rooms.building", "events.*");
 
-      const serializedItems = events.map(event => {
+      const serializedItems = events.map((event) => {
         return {
           id_event: event.id_event,
           building: event.building,
@@ -27,13 +25,12 @@ class EventsController {
           name_event: event.name,
           description: event.description,
           date_time: format(event.date_time, "dd'/'MM'/'yyyy HH':'mn"),
-          responsible: event.responsible
-        }
-      })    
-      response.json(serializedItems)   
-
+          responsible: event.responsible,
+        };
+      });
+      response.json(serializedItems);
     } catch (error) {
-      return response.json({ error: 'Something went wrong list event'});
+      return response.json({ error: "Something went wrong list event" });
     }
   }
 
@@ -43,13 +40,16 @@ class EventsController {
 
       const searchDate = parseISO(day.toLocaleString());
 
-      const events = await knex('rooms_events')
-      .join('events', 'events.id_event', '=', 'rooms_events.id_event')
-      .join('rooms', 'rooms.id_room', '=', 'rooms_events.id_room')
-      .select('rooms.name AS room_name', 'rooms.building', 'events.*')
-      .whereBetween('date_time', [startOfDay(searchDate), endOfDay(searchDate)]);
+      const events = await knex("rooms_events")
+        .join("events", "events.id_event", "=", "rooms_events.id_event")
+        .join("rooms", "rooms.id_room", "=", "rooms_events.id_room")
+        .select("rooms.name AS room_name", "rooms.building", "events.*")
+        .whereBetween("date_time", [
+          startOfDay(searchDate),
+          endOfDay(searchDate),
+        ]);
 
-      const serializedItems = events.map(event => {
+      const serializedItems = events.map((event) => {
         return {
           id_event: event.id_event,
           building: event.building,
@@ -57,91 +57,90 @@ class EventsController {
           name_event: event.name,
           description: event.description,
           date_time: format(event.date_time, "dd'/'MM'/'yyyy HH':'mn"),
-          responsible: event.responsible
-        }
-      })    
-      response.json(serializedItems)   
-
+          responsible: event.responsible,
+        };
+      });
+      response.json(serializedItems);
     } catch (error) {
-      return response.json({ error: 'Something went wrong list event'});
+      return response.json({ error: "Something went wrong list event" });
     }
   }
 
   async create(request: Request, response: Response) {
     try {
-        const { name, description, date_time, responsible, rooms } = request.body;
+      const { name, description, date_time, responsible, rooms } = request.body;
 
-        const trx = await knex.transaction();
+      const trx = await knex.transaction();
 
-        const parseDateTime = parseISO(date_time);
-        const eventDateTime = startOfHour(parseDateTime);
+      const parseDateTime = parseISO(date_time);
+      const eventDateTime = startOfHour(parseDateTime);
 
-        if(isPast(parseDateTime)) {
-          await trx.rollback();
-          return response.json('This date is before the actual date and hour');
-        }
+      if (isPast(parseDateTime)) {
+        await trx.rollback();
+        return response.json("This date is before the actual date and hour");
+      }
 
-        for(var i = 0; i < rooms.length; i++) {
-          const findEventsInSameDate = await trx('rooms_events')
-          .join('events', 'events.id_event', '=', 'rooms_events.id_event')
-          .join('rooms', 'rooms.id_room', '=', 'rooms_events.id_room')
-          .where('date_time', eventDateTime)
-          .where('rooms_events.id_room', rooms[i])
-          .select('*')
+      for (var i = 0; i < rooms.length; i++) {
+        const findEventsInSameDate = await trx("rooms_events")
+          .join("events", "events.id_event", "=", "rooms_events.id_event")
+          .join("rooms", "rooms.id_room", "=", "rooms_events.id_room")
+          .where("date_time", eventDateTime)
+          .where("rooms_events.id_room", rooms[i])
+          .select("*")
           .first();
 
-          if(findEventsInSameDate) {
-            await trx.rollback();
-            return response.json('There is an events already booked in the same same local and date')
-          }
+        if (findEventsInSameDate) {
+          await trx.rollback();
+          return response.json(
+            "There is an events already booked in the same same local and date"
+          );
         }
+      }
 
-        const event = {
+      const event = {
         name,
         description,
         date_time: eventDateTime,
         responsible,
+      };
+
+      const eventCreated = await trx("event").insert(event);
+      const id_event = eventCreated[0];
+
+      const rooms_events = rooms.maps((id_room: Number) => {
+        return {
+          id_room,
+          id_event,
         };
+      });
 
-        const eventCreated = await trx('event').insert(event); 
-        const id_event = eventCreated[0];
+      await trx("rooms_events").insert(rooms_events);
+      await trx.commit();
 
-        const rooms_events = rooms
-        .maps((id_room: Number) => {
-            return {
-                id_room,
-                id_event,
-            }
-        });
-
-        await trx('rooms_events').insert(rooms_events);
-        await trx.commit();
-
-        return response.json({message: "Event inserted"})
+      return response.json({ message: "Event inserted" });
     } catch (error) {
-        return response.json({error: "Something went wrong creating event"})
+      return response.json({ error: "Something went wrong creating event" });
     }
   }
 
   async remove(request: Request, response: Response) {
     try {
-      const {id_event} = request.params;
+      const { id_event } = request.params;
 
       const trx = await knex.transaction();
-      const verify = await trx('events').where('id_event', id_event).del();
+      const verify = await trx("events").where("id_event", id_event).del();
 
-      if(verify === 0) {
+      if (verify === 0) {
         await trx.rollback();
-        return response.json({ message: 'event not exists'})
+        return response.json({ message: "event not exists" });
       }
 
-      await trx('rooms_events').where('id_event', id_event).del();
+      await trx("rooms_events").where("id_event", id_event).del();
 
       await trx.commit();
-      return response.json({ message: 'event deleted with success!'});
-
+      return response.json({ message: "event deleted with success!" });
     } catch (error) {
-      return response.json({ error: 'Something went wrong to remove event'})
+      return response.json({ error: "Something went wrong to remove event" });
     }
   }
 }
