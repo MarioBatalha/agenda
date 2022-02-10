@@ -17,6 +17,7 @@ routes.post('/rooms', celebrate({
     })
 }, { abortEarly: false}), roomsController.create);
 routes.put('/rooms/:id_room', roomsController.update);
+routes.put('/rooms/:id_room', roomsController.dataUpdate);
 routes.delete('/rooms', roomsController.remove);
 
 routes.post('/events', celebrate({
