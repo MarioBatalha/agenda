@@ -18,6 +18,9 @@ class RoomsController {
       const rooms = await knex('rooms').select('rooms.*')
       .where('id_room', id_room)
       .first();
+
+      if(!rooms) return response.send('Room not exists');
+      
       return response.json(rooms);
     } catch (error) {
       response.json({ error: "Error to update rooms" });
