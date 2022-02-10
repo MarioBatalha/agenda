@@ -12,6 +12,16 @@ class RoomsController {
     }
   }
 
+  async dataUpdate(request: Request, response: Response) {
+    try {
+      const { id_rooms } = request.params;
+      const rooms = await knex('rooms').select('rooms.*');
+      return response.json(rooms);
+    } catch (error) {
+      response.json({ error: "Error to update rooms" });
+    }
+  }
+
   async create(request: Request, response: Response) {
     try {
       const { name } = request.body;
