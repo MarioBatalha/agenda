@@ -15,16 +15,32 @@ class EventsController {
       const events = await knex("rooms_events")
         .join("events", "events.id_event", "=", "rooms_events.id_event")
         .join("rooms", "rooms.id_room", "=", "rooms_events.id_room")
-        .select("rooms.name AS room_name", "rooms.building", "events.*");
+        .select([
+          knex.raw("group_concat(rooms.name AS room_name"),
+          knex.raw("group_concat(rooms.building) AS building"), 
+          'events.*'
+        ])
+        .groupBy('rooms_events.id_event')
+        .orderBy('date_time')
 
       const serializedItems = events.map((event) => {
+
+        const buildingArray =  event.building.split(',');
+        const roomNameArray =  event.rooms_name.split(',');
+
+        const buildingsRooms = [];
+
+        for(var i = 0; i < buildingArray.length; i++) {
+          buildingsRooms.push({ building: buildingArray[i], room: roomNameArray});
+        }
+
         return {
           id_event: event.id_event,
-          building: event.building,
+          location: buildingsRooms,
           name_room: event.room_name,
           name_event: event.name,
           description: event.description,
-          date_time: format(event.date_time, "dd'/'MM'/'yyyy HH':'mn"),
+          date_time: format(event.date_time, "'Data: dd'/'MM'/'yyyy  'Horário:' HH':'mn"),
           responsible: event.responsible,
         };
       });
