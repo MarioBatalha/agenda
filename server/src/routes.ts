@@ -1,7 +1,9 @@
 import express from 'express';
+import celebrate from 'celebrate';
 
 import RoomsController from './controllers/RoomsController';
 import EventsController from './controllers/EventsControllers';
+import { Joi } from 'celebrate';
 
 const routes = express.Router();
 
